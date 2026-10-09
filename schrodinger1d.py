@@ -1,62 +1,53 @@
-
+import scipy as sc
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
-from sympy.parsing.sympy_parser import parse_expr
-from scipy.linalg import eigh
+from scipy import linalg
 from scipy.sparse import diags
 
+#Making the constants
+hbar=1.05*10**(-34)
+m=9.1*10**(-31)
+w=10**12
 
-hbar = 1.055e-34
-m = 9.1e-31
+def square(x):
+    return x**2
+
+x=np.array([1,2,3,4,5])
+print(square(x)+2)
 
 
-N = 200
+from sympy import symbols
+from sympy.parsing.sympy_parser import parse_expr
 
-L = 1e-9
-dx = L / (N + 1)
-x = np.linspace(dx, L - dx, N)
 
 
 def V(x):
-    symx = sp.symbols('x')
-    user_expr = input("Potential expression to be entered: ")
+    symx= symbols('x')
+    user_expr = input("potential expression to be entered")
     expression = parse_expr(user_expr)
     f = sp.lambdify(symx, expression, 'numpy')
     return f(x)
 
-v = V(x)
 
-# Hamiltonian matrix
-f1 = -hbar**2 / (2 * m * dx**2)
-f2 = hbar**2 / (m * dx**2) + v
+N=200
 
-diagonals = [
-    np.full(N - 1, f1),
-    f2,
-    np.full(N - 1, f1)
-]
+x, delta_x=np.linspace(0,1,N,retstep=True)
+v=V(x)
 
-Hamiltonian = diags(
-    diagonals, [-1, 0, 1], format='csr'
-).toarray()
+f_1= -hbar**2 / (2*m*delta_x**2)
+f_2=hbar**2 / (m*delta_x**2) + v
 
-# Solve the eigenvalue problem
-energy, psi = eigh(Hamiltonian)
+diag1=np.array(f_2)
+diag2=np.full(N-1, f_1)
 
-print("First five allowed energy states (J):")
-print(energy[:5])
+diagonals = [diag2, diag1, diag2]
 
-print("First five allowed energy states (eV):")
-print(energy[:5] / 1.602176634e-19)
+HamOP = diags(diagonals, [-1, 0, 1], format='csr')
+Hamiltonian = HamOP.toarray()
+energy, psi = linalg.eigh(Hamiltonian)
 
-# Plot the first five eigenfunctions
-for i in range(5):
-    plt.plot(x, psi[:, i], label=f"State {i}")
 
-plt.xlabel("Position x (m)")
-plt.ylabel("Wavefunction (arbitrary scale)")
-plt.title("First five energy eigenstates")
-plt.legend()
-plt.tight_layout()
-plt.show()
+print("Allowed energy states are", energy)
+
+
